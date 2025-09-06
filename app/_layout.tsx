@@ -19,8 +19,6 @@ const APP_KEY = secrets.APP_KEY;
 const SALT = secrets.SALT;
 const SERVER_URL = secrets.SERVER_URL ?? "https://analytics.papillon.bzh";
 
-console.log("Countly Config:", { APP_KEY, SALT, SERVER_URL });
-
 import { ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -177,24 +175,23 @@ const RootLayoutNav = React.memo(function RootLayoutNav() {
       countlyConfig.enableCrashReporting();
       countlyConfig.enableParameterTamperingProtection(SALT);
 
-      // Use a static device ID for better user tracking before consent is given
-      countlyConfig.setDeviceID("papillon-unset");
-
       if (consent.given) {
         if (consent.required) {
           countlyConfig.giveConsent(["sessions"]);
           countlyConfig.setDeviceID("papillon-required");
+          await Countly.deviceId.setID("papillon-required");
         }
 
         if (consent.optional) {
           countlyConfig.giveConsent(["sessions", "crashes", "users"]);
-          countlyConfig.setDeviceID("papillon-optional");
         }
 
         if (consent.advanced) {
           countlyConfig.giveConsent(["sessions", "crashes", "users", "location", "attribution", "push", "star-rating", "feedback"]);
-          countlyConfig.setDeviceID("papillon-advanced");
         }
+
+        let currentDeviceId = await Countly.deviceId.getID();
+        console.log("Countly Device ID:", currentDeviceId);
 
         if (consent.required || consent.optional || consent.advanced) {
           await Countly.initWithConfig(countlyConfig);
